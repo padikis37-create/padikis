@@ -7,12 +7,12 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 
 # ==============================================================================
-# НАСТРОЙКИ ПРОГРАММЫ
+# НАСТРОЙКИ
 # ==============================================================================
 ANTIVIRUS_EXE = "padikis.exe"  # Имя файла вашего антивируса
-YOUTUBE_URL = "https://youtu.be/9JgpziW1xFs?si=DZOCyAIvjk7X8uPf"
+YOUTUBE_URL = "[https://youtu.be/9JgpziW1xFs?si=DZOCyAIvjk7X8uPf](https://youtu.be/9JgpziW1xFs?si=DZOCyAIvjk7X8uPf)"
 
-VIDEO_WAIT_TIME = 63  # Общее время таймера в секундах
+VIDEO_WAIT_TIME = 63  # Общий таймер ожидания (в секундах)
 CLOSE_BROWSER_TIME = 56  # Секунда, на которой закрывается браузер
 
 # ASCII-арт fsociety
@@ -131,7 +131,6 @@ def open_antivirus(exe_path):
 
 
 def main():
-    # Если процесс запущен как дочернее окно — показываем логотип
     if "--child" in sys.argv:
         print_logo()
         input("\nНажмите Enter для закрытия окна...")
@@ -140,15 +139,13 @@ def main():
     base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     antivirus_path = os.path.join(base_dir, ANTIVIRUS_EXE)
 
-    # Проверка файла антивируса
     if not os.path.exists(antivirus_path):
-        print(f"[!] Ошибка: Файл '{ANTIVIRUS_EXE}' не найден в папки:")
+        print(f"[!] Ошибка: Файл '{ANTIVIRUS_EXE}' не найден в папке:")
         print(f"    {base_dir}")
         input("Нажмите Enter для выхода...")
         return
 
-    # 1. Запуск браузера с видео
-    print("Запуск браузера и загрузка видео...")
+    print("Запуск браузера и автовоспроизведение видео...")
     driver = None
     try:
         options = webdriver.ChromeOptions()
@@ -159,15 +156,11 @@ def main():
         )
         driver.get(YOUTUBE_URL)
     except Exception as e:
-        print(
-            f"[!] Не удалось автоматически запустить Chrome через Selenium: {e}"
-        )
-        print("    Запуск через стандартный браузер...")
+        print(f"[!] Не удалось запустить Chrome через Selenium: {e}")
         import webbrowser
 
         webbrowser.open(YOUTUBE_URL)
 
-    # 2. Обратный отсчет 63 секунды
     print(
         f"Запущен таймер на {VIDEO_WAIT_TIME} сек. Браузер закроется на {CLOSE_BROWSER_TIME}-й секунде."
     )
@@ -177,7 +170,6 @@ def main():
         sys.stdout.write(f"\rПрошло: {elapsed} сек. | Осталось: {remaining} сек. ")
         sys.stdout.flush()
 
-        # Автоматическое закрытие браузера на 56-й секунде
         if elapsed == CLOSE_BROWSER_TIME and driver:
             try:
                 driver.quit()
@@ -191,12 +183,10 @@ def main():
 
     print("\n\nОткрытие окон fsociety и антивируса...")
 
-    # 3. Вывод логотипа в текущем окне
     print_logo()
 
-    # 4. Запуск 4 пар дополнительных окон
     EXTRA_PAIRS_COUNT = 4
-    for i in range(EXTRA_PAIRS_COUNT):
+    for _ in range(EXTRA_PAIRS_COUNT):
         open_child_window()
         open_antivirus(antivirus_path)
         time.sleep(0.1)
