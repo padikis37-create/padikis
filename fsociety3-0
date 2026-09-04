@@ -1,0 +1,209 @@
+import os
+import subprocess
+import sys
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+
+# ==============================================================================
+# НАСТРОЙКИ ПРОГРАММЫ
+# ==============================================================================
+ANTIVIRUS_EXE = "padikis.exe"  # Имя файла вашего антивируса
+YOUTUBE_URL = "https://youtu.be/9JgpziW1xFs?si=DZOCyAIvjk7X8uPf"
+
+VIDEO_WAIT_TIME = 63  # Общее время таймера в секундах
+CLOSE_BROWSER_TIME = 56  # Секунда, на которой закрывается браузер
+
+# ASCII-арт fsociety
+LOGO = r"""
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XX                                                                          XX
+XX   MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM   XX
+XX   MMMMMMMMMMMMMMMMMMMMMssssssssssssssssssssssssssMMMMMMMMMMMMMMMMMMMMM   XX
+XX   MMMMMMMMMMMMMMMMss'''                          '''ssMMMMMMMMMMMMMMMM   XX
+XX   MMMMMMMMMMMMyy''                                    ''yyMMMMMMMMMMMM   XX
+XX   MMMMMMMMyy''                                            ''yyMMMMMMMM   XX
+XX   MMMMMy''                                                    ''yMMMMM   XX
+XX   MMMy'                                                        'yMMM   XX
+XX   Mh'                                                            'hM   XX
+XX   -                                                                -   XX
+XX                                                                          XX
+XX   ::                                                              ::   XX
+XX   MMhh.        ..hhhhhh..                    ..hhhhhh..        .hhMM   XX
+XX   MMMMMh   ..hhMMMMMMMMMMhh.                .hhMMMMMMMMMMhh..   hMMMMM   XX
+XX   ---MMM .hMMMMdd:::dMMMMMMMhh..        ..hhMMMMMMMd:::ddMMMMh. MMM---   XX
+XX   MMMMMM MMmm''      'mmMMMMMMMMyy.  .yyMMMMMMMMmm'      ''mmMM MMMMMM   XX
+XX   ---mMM ''              'mmMMMMMMMM  MMMMMMMMmm'              '' MMm---   XX
+XX   yyyym'    .              'mMMMMm'  'mMMMMm'              .    'myyyy   XX
+XX   mm''    .y'     ..yyyyy..    ''''      ''''    ..yyyyy..     'y.    ''mm   XX
+XX            MN    .sMMMMMMMMMss.    .    .    .ssMMMMMMMMMs.    NM            XX
+XX            N`    MMMMMMMMMMMMMN    M    M    NMMMMMMMMMMMMM    `N            XX
+XX             +  .sMNNNNNMMMMMN+    `N    N`    +NMMMMMNNNNNMs.  +             XX
+XX              o+++     ++++Mo    M      M    oM++++     +++o              XX
+XX                                oo      oo                                XX
+XX           oM                  oo          oo                  Mo         XX
+XX          oMMo                M              M                oMMo        XX
+XX        +MMMM                 s              s                 MMMM+      XX
+XX       +MMMMM+            +++NNNN+        +NNNN+++            +MMMMM+     XX
+XX      +MMMMMMM+        ++NNMMMMMMMMN+    +NMMMMMMMMNN++        +MMMMMMM+    XX
+XX      MMMMMMMMMNN+++NNMMMMMMMMMMMMMMNNNNMMMMMMMMMMMMMMNN+++NNMMMMMMMMM    XX
+XX      yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy    XX
+XX    m  yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy  m  XX
+XX    MMm yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy mMM  XX
+XX    MMMm .yyMMMMMMMMMMMMMMMM     MMMMMMMMMM     MMMMMMMMMMMMMMMMyy. mMMM  XX
+XX    MMMMd   ''''hhhhh        odddo          obbbo        hhhh''''   dMMMM  XX
+XX    MMMMMd              'hMMMMMMMMMMddddddMMMMMMMMMMh'              dMMMMM  XX
+XX    MMMMMMd              'hMMMMMMMMMMMMMMMMMMMMMMh'                dMMMMMM  XX
+XX    MMMMMMM-                ''ddMMMMMMMMMMMMMMdd''                -MMMMMMM  XX
+XX    MMMMMMMM                    '::dddddddd::'                    MMMMMMMM  XX
+XX    MMMMMMMM-                                                     -MMMMMMMM  XX
+XX    MMMMMMMMM                                                     MMMMMMMMMM  XX
+XX    MMMMMMMMMy                                                    yMMMMMMMMM  XX
+XX    MMMMMMMMMMy.                                                .yMMMMMMMMMM  XX
+XX    MMMMMMMMMMMMy.                                            .yMMMMMMMMMMMM  XX
+XX    MMMMMMMMMMMMMMMy.                                        .yMMMMMMMMMMMMMM  XX
+XX    MMMMMMMMMMMMMMMMMs.                                    .sMMMMMMMMMMMMMMMM  XX
+XX    MMMMMMMMMMMMMMMMMMss.            ....            .ssMMMMMMMMMMMMMMMMMM  XX
+XX    MMMMMMMMMMMMMMMMMMMMNo          oNNNNo          oNMMMMMMMMMMMMMMMMMMMM  XX
+XX                                                                          XX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+    .o88o.                               o8o                 .
+    888 `"                               `"'               .o8
+   o888oo   .oooo.o  .ooooo.   .ooooo.  oooo   .ooooo.   .o888oo oooo   ooo
+    888    d88(  "8 d88' `88b d88' `"Y8 `888  d88' `88b   888    `88. .8'
+    888    `"Y88b.  888   888 888        888  888ooo888   888     `88..8'
+    888    o.  )88b 888   888 888   .o8  888  888    .o   888 .    `888'
+   o888o   8""888P' `Y8bod8P' `Y8bod8P' o888o `Y8bod8P'   "888"     d8'
+                                                                .o...P'
+                                                                `XER0'
+"""
+
+RED = "\033[91m"
+RESET = "\033[0m"
+
+
+def print_logo():
+    """Очищает консоль и выводит логотип."""
+    sys.stdout.write("\033[H\033[J")
+    sys.stdout.write(RED + LOGO + RESET + "\n")
+    sys.stdout.flush()
+
+
+def open_child_window():
+    """Запускает дочерний процесс fsociety в новом окне консоли."""
+    script_path = os.path.abspath(sys.argv[0])
+
+    if sys.platform == "win32":
+        subprocess.Popen(
+            [sys.executable, script_path, "--child"],
+            creationflags=subprocess.CREATE_NEW_CONSOLE,
+        )
+    elif sys.platform == "darwin":
+        subprocess.Popen(
+            [
+                "osascript",
+                "-e",
+                f'tell application "Terminal" to do script "{sys.executable} \'{script_path}\' --child"',
+            ]
+        )
+    else:
+        for term in ["x-terminal-emulator", "gnome-terminal", "konsole", "xterm"]:
+            try:
+                subprocess.Popen([term, "-e", sys.executable, script_path, "--child"])
+                break
+            except FileNotFoundError:
+                continue
+
+
+def open_antivirus(exe_path):
+    """Запускает файл антивируса."""
+    try:
+        if sys.platform == "win32":
+            subprocess.Popen([exe_path], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        else:
+            subprocess.Popen([exe_path])
+    except Exception as e:
+        print(f"\n[!] Ошибка запуска '{exe_path}': {e}")
+
+
+def main():
+    # Если процесс запущен как дочернее окно — показываем логотип
+    if "--child" in sys.argv:
+        print_logo()
+        input("\nНажмите Enter для закрытия окна...")
+        return
+
+    base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    antivirus_path = os.path.join(base_dir, ANTIVIRUS_EXE)
+
+    # Проверка файла антивируса
+    if not os.path.exists(antivirus_path):
+        print(f"[!] Ошибка: Файл '{ANTIVIRUS_EXE}' не найден в папки:")
+        print(f"    {base_dir}")
+        input("Нажмите Enter для выхода...")
+        return
+
+    # 1. Запуск браузера с видео
+    print("Запуск браузера и загрузка видео...")
+    driver = None
+    try:
+        options = webdriver.ChromeOptions()
+        options.add_argument("--autoplay-policy=no-user-gesture-required")
+        driver = webdriver.Chrome(
+            service=ChromeService(ChromeDriverManager().install()),
+            options=options,
+        )
+        driver.get(YOUTUBE_URL)
+    except Exception as e:
+        print(
+            f"[!] Не удалось автоматически запустить Chrome через Selenium: {e}"
+        )
+        print("    Запуск через стандартный браузер...")
+        import webbrowser
+
+        webbrowser.open(YOUTUBE_URL)
+
+    # 2. Обратный отсчет 63 секунды
+    print(
+        f"Запущен таймер на {VIDEO_WAIT_TIME} сек. Браузер закроется на {CLOSE_BROWSER_TIME}-й секунде."
+    )
+
+    for elapsed in range(1, VIDEO_WAIT_TIME + 1):
+        remaining = VIDEO_WAIT_TIME - elapsed
+        sys.stdout.write(f"\rПрошло: {elapsed} сек. | Осталось: {remaining} сек. ")
+        sys.stdout.flush()
+
+        # Автоматическое закрытие браузера на 56-й секунде
+        if elapsed == CLOSE_BROWSER_TIME and driver:
+            try:
+                driver.quit()
+                driver = None
+                sys.stdout.write(" [Браузер закрыт]")
+                sys.stdout.flush()
+            except Exception:
+                pass
+
+        time.sleep(1)
+
+    print("\n\nОткрытие окон fsociety и антивируса...")
+
+    # 3. Вывод логотипа в текущем окне
+    print_logo()
+
+    # 4. Запуск 4 пар дополнительных окон
+    EXTRA_PAIRS_COUNT = 4
+    for i in range(EXTRA_PAIRS_COUNT):
+        open_child_window()
+        open_antivirus(antivirus_path)
+        time.sleep(0.1)
+
+    print(f"\nЗапущено {EXTRA_PAIRS_COUNT} дополнительных пар окон.")
+    input("\nНажмите Enter, чтобы завершить главный процесс...")
+
+
+if __name__ == "__main__":
+    main()
