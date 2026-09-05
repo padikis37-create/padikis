@@ -9,7 +9,7 @@ import webbrowser
 # ==============================================================================
 ANTIVIRUS_EXE = "padikis.exe"  # Имя исполняемого файла
 YOUTUBE_URL = "https://youtu.be/9JgpziW1xFs?si=DZOCyAIvjk7X8uPf"
-VIDEO_DURATION_SECONDS = 54  # Таймер ожидания просмотра видео (в секундах)
+VIDEO_DURATION_SECONDS = 55  # Таймер ожидания просмотра видео (в секундах)
 
 # ASCII-арт fsociety
 LOGO = r"""
@@ -142,11 +142,12 @@ def main():
     # 3. Отображение логотипа в главном окне
     print_logo()
 
-    # 4. Открытие 4 дочерних окон (без задержек)
+    # 4. Открытие 4 дочерних окон с задержкой 0.2 сек
     EXTRA_WINDOWS = 15
     print(f"Открытие {EXTRA_WINDOWS} дочерних окон...")
     for _ in range(EXTRA_WINDOWS):
         open_child_window()
+        time.sleep(0.2)  # Задержка 0.2 секунды между вызовами
 
     # 5. Запуск padikis.exe
     print("Запуск основного приложения...")
