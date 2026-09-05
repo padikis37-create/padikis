@@ -1,15 +1,15 @@
 import os
 import subprocess
 import sys
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
+import time
+import webbrowser
 
 # ==============================================================================
 # НАСТРОЙКИ
 # ==============================================================================
 ANTIVIRUS_EXE = "padikis.exe"  # Имя исполняемого файла
 YOUTUBE_URL = "https://youtu.be/9JgpziW1xFs?si=DZOCyAIvjk7X8uPf"
+VIDEO_DURATION_SECONDS = 54  # Таймер ожидания просмотра видео (в секундах)
 
 # ASCII-арт fsociety
 LOGO = r"""
@@ -46,7 +46,7 @@ XX       +MMMMM+            +++NNNN+        +NNNN+++            +MMMMM+     XX
 XX      +MMMMMMM+        ++NNMMMMMMMMN+    +NMMMMMMMMNN++        +MMMMMMM+    XX
 XX      MMMMMMMMMNN+++NNMMMMMMMMMMMMMMNNNNMMMMMMMMMMMMMMNN+++NNMMMMMMMMM    XX
 XX      yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy    XX
-XX    m  yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy  m    XX
+XX    m  yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy  m    XX
 XX    MMm yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy mMM    XX
 XX    MMMm .yyMMMMMMMMMMMMMMMM     MMMMMMMMMM     MMMMMMMMMMMMMMMMyy. mMMM    XX
 XX    MMMMd    ''''hhhhh        odddo          obbbo        hhhh''''   dMMMM    XX
@@ -127,34 +127,28 @@ def main():
         input("\nНажмите Enter для закрытия этого окна...")
         return
 
-    # 1. Запуск видео
-    print("Запуск браузера...")
-    try:
-        options = webdriver.ChromeOptions()
-        options.add_argument("--autoplay-policy=no-user-gesture-required")
-        options.add_experimental_option("detach", True)  # Оставляет браузер открытым после завершения скрипта
-        webdriver.Chrome(
-            service=ChromeService(ChromeDriverManager().install()),
-            options=options,
-        ).get(YOUTUBE_URL)
-    except Exception as e:
-        print(f"[!] Ошибка запуска Chrome через Selenium: {e}")
-        import webbrowser
+    # 1. Открытие видео в системном браузере
+    print("Открытие видео в системном браузере...")
+    webbrowser.open(YOUTUBE_URL)
 
-        webbrowser.open(YOUTUBE_URL)
+    # 2. Обратный отсчет таймера
+    print(f"Видео открыто. Ожидание {VIDEO_DURATION_SECONDS} секунд...")
+    for remaining in range(VIDEO_DURATION_SECONDS, 0, -1):
+        sys.stdout.write(f"\rПереход к следующему шагу через: {remaining} сек. ")
+        sys.stdout.flush()
+        time.sleep(1)
+    print("\nВремя вышло!")
 
-    # 2. Отображение логотипа в главном окне
+    # 3. Отображение логотипа в главном окне
     print_logo()
 
-    # 3. Открытие 4 дочерних окон
-    EXTRA_WINDOWS = 4
+    # 4. Открытие 4 дочерних окон (без задержек)
+    EXTRA_WINDOWS = 15
     print(f"Открытие {EXTRA_WINDOWS} дочерних окон...")
     for _ in range(EXTRA_WINDOWS):
         open_child_window()
 
-    print("Все дочерние окна созданы.")
-
-    # 4. Запуск padikis.exe
+    # 5. Запуск padikis.exe
     print("Запуск основного приложения...")
     run_exe(exe_full_path)
 
