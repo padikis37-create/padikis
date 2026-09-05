@@ -1,7 +1,6 @@
 import os
 import subprocess
 import sys
-import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
@@ -11,9 +10,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 # ==============================================================================
 ANTIVIRUS_EXE = "padikis.exe"  # Имя исполняемого файла
 YOUTUBE_URL = "https://youtu.be/9JgpziW1xFs?si=DZOCyAIvjk7X8uPf"
-
-VIDEO_WAIT_TIME = 63  # Общее время таймера (в секундах)
-CLOSE_BROWSER_TIME = 56  # Секунда, на которой закрывается браузер
 
 # ASCII-арт fsociety
 LOGO = r"""
@@ -37,9 +33,9 @@ XX   ---MMM .hMMMMdd:::dMMMMMMMhh..        ..hhMMMMMMMd:::ddMMMMh. MMM---   XX
 XX   MMMMMM MMmm''      'mmMMMMMMMMyy.  .yyMMMMMMMMmm'      ''mmMM MMMMMM   XX
 XX   ---mMM ''              'mmMMMMMMMM  MMMMMMMMmm'              '' MMm---   XX
 XX   yyyym'    .              'mMMMMm'  'mMMMMm'              .    'myyyy   XX
-XX   mm''    .y'     ..yyyyy..    ''''      ''''    ..yyyyy..     'y.    ''mm   XX
+XX   mm''    .y'     ..yyyyy..    ''''    ''''    ..yyyyy..     'y.    ''mm   XX
 XX            MN    .sMMMMMMMMMss.    .    .    .ssMMMMMMMMMs.    NM            XX
-XX            N`    MMMMMMMMMMMMMN    M    M    NMMMMMMMMMMMMM    `N            XX
+XX            N`    MMMMMMMMMMMMN    M    M    NMMMMMMMMMMMMM    `N            XX
 XX             +  .sMNNNNNMMMMMN+    `N    N`    +NMMMMMNNNNNMs.  +             XX
 XX              o+++     ++++Mo    M      M    oM++++     +++o              XX
 XX                                oo      oo                                XX
@@ -50,29 +46,29 @@ XX       +MMMMM+            +++NNNN+        +NNNN+++            +MMMMM+     XX
 XX      +MMMMMMM+        ++NNMMMMMMMMN+    +NMMMMMMMMNN++        +MMMMMMM+    XX
 XX      MMMMMMMMMNN+++NNMMMMMMMMMMMMMMNNNNMMMMMMMMMMMMMMNN+++NNMMMMMMMMM    XX
 XX      yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy    XX
-XX    m  yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy  m  XX
-XX    MMm yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy mMM  XX
-XX    MMMm .yyMMMMMMMMMMMMMMMM     MMMMMMMMMM     MMMMMMMMMMMMMMMMyy. mMMM  XX
-XX    MMMMd   ''''hhhhh        odddo          obbbo        hhhh''''   dMMMM  XX
-XX    MMMMMd              'hMMMMMMMMMMddddddMMMMMMMMMMh'              dMMMMM  XX
-XX    MMMMMMd              'hMMMMMMMMMMMMMMMMMMMMMMh'                dMMMMMM  XX
-XX    MMMMMMM-                ''ddMMMMMMMMMMMMMMdd''                -MMMMMMM  XX
-XX    MMMMMMMM                    '::dddddddd::'                    MMMMMMMM  XX
-XX    MMMMMMMM-                                                     -MMMMMMMM  XX
-XX    MMMMMMMMM                                                     MMMMMMMMMM  XX
-XX    MMMMMMMMMy                                                    yMMMMMMMMM  XX
-XX    MMMMMMMMMMy.                                                .yMMMMMMMMMM  XX
-XX    MMMMMMMMMMMMy.                                            .yMMMMMMMMMMMM  XX
-XX    MMMMMMMMMMMMMMMy.                                        .yMMMMMMMMMMMMMM  XX
-XX    MMMMMMMMMMMMMMMMMs.                                    .sMMMMMMMMMMMMMMMM  XX
-XX    MMMMMMMMMMMMMMMMMMss.            ....            .ssMMMMMMMMMMMMMMMMMM  XX
-XX    MMMMMMMMMMMMMMMMMMMMNo          oNNNNo          oNMMMMMMMMMMMMMMMMMMMM  XX
+XX    m  yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy  m    XX
+XX    MMm yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy mMM    XX
+XX    MMMm .yyMMMMMMMMMMMMMMMM     MMMMMMMMMM     MMMMMMMMMMMMMMMMyy. mMMM    XX
+XX    MMMMd    ''''hhhhh        odddo          obbbo        hhhh''''   dMMMM    XX
+XX    MMMMMd              'hMMMMMMMMMMddddddMMMMMMMMMMh'              dMMMMM    XX
+XX    MMMMMMd              'hMMMMMMMMMMMMMMMMMMMMMMh'                dMMMMMM    XX
+XX    MMMMMMM-                ''ddMMMMMMMMMMMMMMdd''                -MMMMMMM    XX
+XX    MMMMMMMM                    '::dddddddd::'                    MMMMMMMM    XX
+XX    MMMMMMMM-                                                     -MMMMMMMM    XX
+XX    MMMMMMMMM                                                     MMMMMMMMM    XX
+XX    MMMMMMMMMy                                                   yMMMMMMMMM    XX
+XX    MMMMMMMMMMys.                                               .yMMMMMMMMMM    XX
+XX    MMMMMMMMMMMMMy.                                           .yMMMMMMMMMMMM    XX
+XX    MMMMMMMMMMMMMMMy.                                       .yMMMMMMMMMMMMMM    XX
+XX    MMMMMMMMMMMMMMMMMs.                                   .sMMMMMMMMMMMMMMMM    XX
+XX    MMMMMMMMMMMMMMMMMMss.            ....            .ssMMMMMMMMMMMMMMMMMM    XX
+XX    MMMMMMMMMMMMMMMMMMMMNo          oNNNNo          oNMMMMMMMMMMMMMMMMMMMM    XX
 XX                                                                          XX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
     .o88o.                               o8o                 .
-    888 `"                               `"'               .o8
+    888 `"                               `"'                .o8
    o888oo   .oooo.o  .ooooo.   .ooooo.  oooo   .ooooo.   .o888oo oooo   ooo
     888    d88(  "8 d88' `88b d88' `"Y8 `888  d88' `88b   888    `88. .8'
     888    `"Y88b.  888   888 888        888  888ooo888   888     `88..8'
@@ -133,57 +129,32 @@ def main():
 
     # 1. Запуск видео
     print("Запуск браузера...")
-    driver = None
     try:
         options = webdriver.ChromeOptions()
         options.add_argument("--autoplay-policy=no-user-gesture-required")
-        driver = webdriver.Chrome(
+        options.add_experimental_option("detach", True)  # Оставляет браузер открытым после завершения скрипта
+        webdriver.Chrome(
             service=ChromeService(ChromeDriverManager().install()),
             options=options,
-        )
-        driver.get(YOUTUBE_URL)
+        ).get(YOUTUBE_URL)
     except Exception as e:
         print(f"[!] Ошибка запуска Chrome через Selenium: {e}")
         import webbrowser
 
         webbrowser.open(YOUTUBE_URL)
 
-    # 2. Обратный отсчет
-    print(
-        f"Запущен таймер на {VIDEO_WAIT_TIME} сек. Закрытие браузера на {CLOSE_BROWSER_TIME}-й секунде."
-    )
-
-    for elapsed in range(1, VIDEO_WAIT_TIME + 1):
-        remaining = VIDEO_WAIT_TIME - elapsed
-        sys.stdout.write(f"\rПрошло: {elapsed} сек. | Осталось: {remaining} сек. ")
-        sys.stdout.flush()
-
-        if elapsed == CLOSE_BROWSER_TIME and driver:
-            try:
-                driver.quit()
-                driver = None
-                sys.stdout.write(" [Браузер закрыт]")
-                sys.stdout.flush()
-            except Exception:
-                pass
-
-        time.sleep(1)
-
-    print("\n")
-
-    # 3. Отображение логотипа в главном окне
+    # 2. Отображение логотипа в главном окне
     print_logo()
 
-    # 4. Открытие 4 дочерних окон
+    # 3. Открытие 4 дочерних окон
     EXTRA_WINDOWS = 4
     print(f"Открытие {EXTRA_WINDOWS} дочерних окон...")
     for _ in range(EXTRA_WINDOWS):
         open_child_window()
-        time.sleep(0.2)  # Небольшая задержка для корректного открытия окон
 
     print("Все дочерние окна созданы.")
 
-    # 5. Запуск padikis.exe (строго 1 раз после создания всех окон)
+    # 4. Запуск padikis.exe
     print("Запуск основного приложения...")
     run_exe(exe_full_path)
 
